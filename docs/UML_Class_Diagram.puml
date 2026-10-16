@@ -1,0 +1,155 @@
+@startuml UML_Class_Diagram
+' StudyHub (SEG2105 Fall 2026, Group 40) - Deliverable 1 class diagram.
+' Generated from the classes in app/src/main/java. Regenerate the PDF with:
+'   plantuml -tpdf docs/UML_Class_Diagram.puml
+' Kotlin properties declared with "val" are shown as public read-only attributes.
+
+title StudyHub - Class Diagram (Deliverable 1, Group 40)
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam shadowing false
+skinparam packageStyle rectangle
+hide empty members
+set separator none
+
+
+package "android / androidx (framework)" #F4F4F4 {
+  abstract class ComponentActivity
+  abstract class SQLiteOpenHelper
+}
+
+package "com.group40.studyhub_project (activities)" {
+  class LoginActivity {
+    # onCreate(savedInstanceState: Bundle?): void
+    - openWelcome(): void
+  }
+  class SignUpActivity {
+    # onCreate(savedInstanceState: Bundle?): void
+  }
+  class WelcomeActivity {
+    # onCreate(savedInstanceState: Bundle?): void
+    - openLogin(): void
+  }
+  class UserListActivity {
+    # onCreate(savedInstanceState: Bundle?): void
+  }
+  class "<<Composable functions>>" as Screens <<file-level>> {
+    + LoginScreen(onLogin: (String, String) -> String?, onRegister: () -> Unit): void
+    + WelcomeScreen(firstName: String, role: String, onSignOut: () -> Unit, onViewUsers: (() -> Unit)?): void
+    + UserListScreen(users: List<User>, onBack: () -> Unit): void
+    + UserRow(user: User): void
+  }
+}
+
+package "com.group40.studyhub_project.auth" {
+  class AuthManager {
+    - database: UserDatabase
+    + AuthManager(context: Context)
+    + register(user: User): Boolean
+    + login(username: String, password: String): User?
+    + usernameExists(username: String): Boolean
+  }
+  class SessionManager {
+    - prefs: SharedPreferences
+    + SessionManager(context: Context)
+    + startSession(user: User): void
+    + currentUser(): User?
+    + endSession(): void
+    + {static} roleLabel(role: String): String
+  }
+}
+
+package "com.group40.studyhub_project.data" {
+  class UserDatabase {
+    + UserDatabase(context: Context)
+    + onCreate(db: SQLiteDatabase): void
+    + onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int): void
+    + addUser(user: User): Boolean
+    + usernameExists(username: String): Boolean
+    + getUser(username: String, password: String): User?
+    + getAllUsers(): List<User>
+  }
+  note bottom of UserDatabase
+    SQLite file "StudyHub.db", table "users"
+    (username PK, password, firstName,
+    lastName, email, role).
+    onCreate() seeds the admin account.
+  end note
+}
+
+package "com.group40.studyhub_project.model" {
+  class User <<data class>> {
+    + username: String {readOnly}
+    + password: String {readOnly}
+    + firstName: String {readOnly}
+    + lastName: String {readOnly}
+    + email: String {readOnly}
+    + role: String {readOnly}
+  }
+  class Admin <<data class>> {
+    + user: User {readOnly}
+    --
+    invariant: user.role == "admin"
+  }
+  class Student <<data class>> {
+    + user: User {readOnly}
+    --
+    invariant: user.role == "student"
+  }
+  class StudentGroupLeader <<data class>> {
+    + user: User {readOnly}
+    --
+    invariant: user.role == "student_group_leader"
+  }
+}
+
+package "com.group40.studyhub_project.util" {
+  class Validator <<object>> {
+    + {static} validateFirstName(firstName: String): String?
+    + {static} validateLastName(lastName: String): String?
+    + {static} validateEmail(email: String): String?
+    + {static} validateUsername(username: String): String?
+    + {static} validateUsernameAvailability(username: String, usernameExists: Boolean): String?
+    + {static} validatePassword(password: String): String?
+    + {static} validateRole(role: String): String?
+  }
+  class "ValidatedTextField.kt" as VTF <<file-level>> {
+    + ValidatedTextField(value: String, onValueChange: (String) -> Unit, label: String, error: String?, ...): void
+  }
+}
+
+' Inheritance
+ComponentActivity <|-- LoginActivity
+ComponentActivity <|-- SignUpActivity
+ComponentActivity <|-- WelcomeActivity
+ComponentActivity <|-- UserListActivity
+SQLiteOpenHelper <|-- UserDatabase
+
+' Role classes wrap exactly one User (composition, not subclassing, in the current code)
+Admin *-- "1" User
+Student *-- "1" User
+StudentGroupLeader *-- "1" User
+
+' Ownership / associations
+AuthManager "1" *-- "1" UserDatabase : database
+UserDatabase "1" o-- "0..*" User : stores >
+SessionManager ..> User : saves / restores
+AuthManager ..> Validator : checks fields
+AuthManager ..> User : creates / returns
+
+LoginActivity ..> AuthManager : login()
+LoginActivity ..> SessionManager : startSession()
+LoginActivity ..> Screens : LoginScreen
+SignUpActivity ..> AuthManager : register()
+SignUpActivity ..> Validator
+SignUpActivity ..> VTF
+SignUpActivity ..> User : builds
+WelcomeActivity ..> SessionManager : currentUser() / endSession()
+WelcomeActivity ..> Screens : WelcomeScreen
+WelcomeActivity ..> UserListActivity : opens (admin only)
+UserListActivity ..> SessionManager : admin check
+UserListActivity ..> UserDatabase : getAllUsers()
+UserListActivity ..> Screens : UserListScreen
+
+LoginActivity ..> SignUpActivity : opens
+@enduml
