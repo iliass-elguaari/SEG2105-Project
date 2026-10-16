@@ -78,28 +78,29 @@ package "com.group40.studyhub_project.data" {
 }
 
 package "com.group40.studyhub_project.model" {
-  class User <<data class>> {
+  class User <<open>> {
     + username: String {readOnly}
     + password: String {readOnly}
     + firstName: String {readOnly}
     + lastName: String {readOnly}
     + email: String {readOnly}
     + role: String {readOnly}
+    + User(username: String, password: String, firstName: String, lastName: String, email: String, role: String)
   }
-  class Admin <<data class>> {
-    + user: User {readOnly}
+  class Admin {
+    + Admin(username: String, password: String, firstName: String, lastName: String, email: String)
     --
-    invariant: user.role == "admin"
+    role = "admin"
   }
-  class Student <<data class>> {
-    + user: User {readOnly}
+  class Student {
+    + Student(username: String, password: String, firstName: String, lastName: String, email: String)
     --
-    invariant: user.role == "student"
+    role = "student"
   }
-  class StudentGroupLeader <<data class>> {
-    + user: User {readOnly}
+  class StudentGroupLeader {
+    + StudentGroupLeader(username: String, password: String, firstName: String, lastName: String, email: String)
     --
-    invariant: user.role == "student_group_leader"
+    role = "student_group_leader"
   }
 }
 
@@ -125,10 +126,10 @@ ComponentActivity <|-- WelcomeActivity
 ComponentActivity <|-- UserListActivity
 SQLiteOpenHelper <|-- UserDatabase
 
-' Role classes wrap exactly one User (composition, not subclassing, in the current code)
-Admin *-- "1" User
-Student *-- "1" User
-StudentGroupLeader *-- "1" User
+' Role subclasses fix the role passed to User
+User <|-- Admin
+User <|-- Student
+User <|-- StudentGroupLeader
 
 ' Ownership / associations
 AuthManager "1" *-- "1" UserDatabase : database

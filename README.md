@@ -63,7 +63,7 @@ app/src/main/java/
 │   ├── auth/AuthManager.kt     # register / login, wraps UserDatabase
 │   ├── auth/SessionManager.kt  # logged-in user in SharedPreferences
 │   ├── data/UserDatabase.kt    # SQLiteOpenHelper, users table, admin seed
-│   └── model/                  # User, Admin, Student, StudentGroupLeader
+│   └── model/                  # User (open) + Admin, Student, StudentGroupLeader subclasses
 └── util/                       # Validator, ValidatedTextField
 docs/
 ├── UML_Class_Diagram.puml      # PlantUML source
