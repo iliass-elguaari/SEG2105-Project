@@ -32,6 +32,10 @@ class WelcomeActivity: ComponentActivity() {
                 WelcomeScreen(
                     firstName= user.firstName,
                     role= SessionManager.roleLabel(user.role),
+                    // Only the admin gets the "View All Users" button.
+                    onViewUsers= if (user.role== "admin") {
+                        { startActivity(Intent(this, UserListActivity::class.java)) }
+                    } else null,
                     onSignOut= {
                         session.endSession()
                         openLogin()
@@ -53,7 +57,8 @@ class WelcomeActivity: ComponentActivity() {
 fun WelcomeScreen(
     firstName: String,
     role: String,
-    onSignOut: () -> Unit
+    onSignOut: () -> Unit,
+    onViewUsers: (() -> Unit)?= null
 ) {
     Column(
         modifier= Modifier.fillMaxSize().padding(24.dp),
@@ -67,6 +72,14 @@ fun WelcomeScreen(
         )
 
         Spacer(Modifier.height(24.dp))
+
+        if (onViewUsers!= null) {
+            Button(onClick= onViewUsers) {
+                Text("View All Users")
+            }
+
+            Spacer(Modifier.height(12.dp))
+        }
 
         Button(onClick= onSignOut) {
             Text("Sign Out")
