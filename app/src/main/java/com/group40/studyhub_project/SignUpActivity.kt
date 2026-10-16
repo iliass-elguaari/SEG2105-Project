@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import com.group40.studyhub_project.auth.AuthManager
 import com.group40.studyhub_project.model.User
 import com.group40.studyhub_project.ui.theme.StudyHubProjectTheme
+import com.group40.studyhub_project.util.ValidatedTextField
+import com.group40.studyhub_project.util.Validator
 
 // Registration form moved out of the old MainActivity as-is.
 // Owned by member 3 (sign-up and validation).
@@ -35,6 +37,13 @@ class SignUpActivity: ComponentActivity() {
                 var role by remember {mutableStateOf("student") }
                 var message by remember {mutableStateOf("") }
 
+                var firstNameError by remember { mutableStateOf<String?>(null) }
+                var lastNameError by remember { mutableStateOf<String?>(null) }
+                var emailError by remember { mutableStateOf<String?>(null) }
+                var usernameError by remember { mutableStateOf<String?>(null) }
+                var passwordError by remember { mutableStateOf<String?>(null) }
+                var roleError by remember { mutableStateOf<String?>(null) }
+
                 Column(
                     modifier= Modifier.fillMaxSize().padding(24.dp),
                     horizontalAlignment= Alignment.CenterHorizontally,
@@ -44,41 +53,58 @@ class SignUpActivity: ComponentActivity() {
 
                     Spacer(Modifier.height(16.dp))
 
-                    OutlinedTextField(
-                        value= firstName,
-                        onValueChange= { firstName= it },
-                        label= { Text("First name") },
-                        singleLine= true
+                    ValidatedTextField(
+                        value = firstName,
+                        onValueChange = {
+                            firstName = it
+                            firstNameError = null
+                        },
+                        label = "First name",
+                        error = firstNameError
                     )
 
-                    OutlinedTextField(
-                        value= lastName,
-                        onValueChange= { lastName= it },
-                        label= { Text("Last name") },
-                        singleLine= true
+                    ValidatedTextField(
+                        value = lastName,
+                        onValueChange = {
+                            lastName = it
+                            lastNameError = null
+                        },
+                        label = "Last name",
+                        error = lastNameError
                     )
 
-                    OutlinedTextField(
-                        value= email,
-                        onValueChange= { email= it },
-                        label= { Text("Email") },
-                        singleLine= true,
-                        keyboardOptions= KeyboardOptions(keyboardType= KeyboardType.Email)
+                    ValidatedTextField(
+                        value = email,
+                        onValueChange = {
+                            email = it
+                            emailError = null
+                        },
+                        label = "Email",
+                        error = emailError,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email
+                        )
                     )
 
-                    OutlinedTextField(
-                        value= username,
-                        onValueChange= { username= it },
-                        label= { Text("Username") },
-                        singleLine= true
+                    ValidatedTextField(
+                        value = username,
+                        onValueChange = {
+                            username = it
+                            usernameError = null
+                        },
+                        label = "Username",
+                        error = usernameError
                     )
 
-                    OutlinedTextField(
-                        value= password,
-                        onValueChange= { password= it },
-                        label= { Text("Password") },
-                        singleLine= true,
-                        visualTransformation= PasswordVisualTransformation()
+                    ValidatedTextField(
+                        value = password,
+                        onValueChange = {
+                            password = it
+                            passwordError = null
+                        },
+                        label = "Password",
+                        error = passwordError,
+                        visualTransformation = PasswordVisualTransformation()
                     )
 
                     Spacer(Modifier.height(8.dp))
@@ -87,21 +113,62 @@ class SignUpActivity: ComponentActivity() {
                     Row(verticalAlignment= Alignment.CenterVertically) {
                         RadioButton(
                             selected= role== "student",
-                            onClick= { role= "student" }
+                            onClick= {
+                                role= "student"
+                                roleError = null
+                            }
                         )
                         Text("Student")
 
                         RadioButton(
                             selected= role== "student_group_leader",
-                            onClick= { role= "student_group_leader" }
+                            onClick= {
+                                role= "student_group_leader"
+                                roleError = null
+                            }
                         )
                         Text("Group Leader")
+                    }
+
+                    roleError?.let { error ->
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
 
                     Spacer(Modifier.height(12.dp))
 
                     Button(
                         onClick= {
+                            firstNameError = Validator.validateFirstName(firstName)
+                            lastNameError = Validator.validateLastName(lastName)
+                            emailError = Validator.validateEmail(email)
+                            usernameError = Validator.validateUsername(username)
+                            passwordError = Validator.validatePassword(password)
+                            roleError = Validator.validateRole(role)
+
+                            if (
+                                firstNameError != null ||
+                                lastNameError != null ||
+                                emailError != null ||
+                                usernameError != null ||
+                                passwordError != null ||
+                                roleError != null
+                            ) {
+                                message = ""
+                                return@Button
+                            }
+
+                            if (auth.usernameExists(username.trim())) {
+                                usernameError = Validator.validateUsernameAvailability(
+                                    username,
+                                    usernameExists = true
+                                )
+                                message = ""
+                                return@Button
+                            }
+
                             val user= User(
                                 username= username.trim(),
                                 password= password,
