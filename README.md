@@ -11,7 +11,7 @@ Repository: https://github.com/SEG2105-Garzon-uOttawa/seg2105f26-group_40_projec
 | --- | --- |
 | Abderrahmane Rissafi | Abderrahmane Rissafi (commit author) |
 | Nevan Vu | [nevanvu](https://github.com/nevanvu) |
-| Wang Dai | [wang-kg](https://github.com/wang-kg) / KingGlacier |
+| Wang Dai | [wang-kg](https://github.com/wang-kg) |
 | Iliass El Guaari | [iliass-elguaari](https://github.com/iliass-elguaari) |
 
 ## Features (Deliverable 1)
