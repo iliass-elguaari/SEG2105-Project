@@ -18,6 +18,8 @@ import com.group40.studyhub_project.model.User
 import com.group40.studyhub_project.ui.theme.StudyHubProjectTheme
 import com.group40.studyhub_project.util.ValidatedTextField
 import com.group40.studyhub_project.util.Validator
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 // Registration form moved out of the old MainActivity as-is.
 // Owned by member 3 (sign-up and validation).
@@ -45,7 +47,7 @@ class SignUpActivity: ComponentActivity() {
                 var roleError by remember { mutableStateOf<String?>(null) }
 
                 Column(
-                    modifier= Modifier.fillMaxSize().padding(24.dp),
+                    modifier= Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
                     horizontalAlignment= Alignment.CenterHorizontally,
                     verticalArrangement= Arrangement.Center
                 ) {
