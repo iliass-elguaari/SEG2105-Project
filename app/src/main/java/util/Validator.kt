@@ -108,7 +108,48 @@ object Validator {
 
         return null
     }
+
+    fun validateCategoryName(name: String): String? {
+        val value = name.trim()
+
+        if (value.isEmpty()) {
+            return "Category name is required."
+        }
+
+        if (value.length !in 2..50) {
+            return "Category name must be between 2 and 50 characters."
+        }
+
+        if (!value.matches(Regex("[\\p{L}\\p{N}]+([ &'.,()+#/-]+[\\p{L}\\p{N}]+)*[).+#]*"))) {
+            return "Use letters, numbers, spaces and & ' . , ( ) + # / - only."
+        }
+
+        return null
+    }
+
+    fun validateCategoryNameAvailability(nameExists: Boolean): String? {
+        if (nameExists) {
+            return "A category with this name already exists."
+        }
+
+        return null
+    }
+
+    fun validateCategoryDescription(description: String): String? {
+        val value = description.trim()
+
+        if (value.isEmpty()) {
+            return "Description is required."
+        }
+
+        if (value.length !in 10..250) {
+            return "Description must be between 10 and 250 characters."
+        }
+
+        if (!value.any { it.isLetter() }) {
+            return "Description must contain letters."
+        }
+
+        return null
+    }
 }
-
-
-
