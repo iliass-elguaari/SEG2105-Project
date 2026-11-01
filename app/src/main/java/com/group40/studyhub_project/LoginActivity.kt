@@ -1,5 +1,6 @@
 package com.group40.studyhub_project
 
+import android.R.attr.password
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -38,6 +39,8 @@ class LoginActivity: ComponentActivity() {
                             session.startSession(user)
                             openWelcome()
                             null
+                        } else if (auth.isDisabled(username, password)) {
+                            "This account has been disabled. Please contact the administrator."
                         } else {
                             "Incorrect username or password."
                         }

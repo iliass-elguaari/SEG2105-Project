@@ -22,6 +22,9 @@ class AuthManager(context: Context) {
     fun login(username:String, password:String): User?{
         return database.getUser(username, password)
     }
+    fun isDisabled(username: String, password: String): Boolean {
+        return database.isDisabled(username, password)
+    }
 
     fun usernameExists(username: String): Boolean {
         return database.usernameExists(username.trim())

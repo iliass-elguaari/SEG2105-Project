@@ -109,6 +109,7 @@ override fun onUpgrade(
             arrayOf(username, password)
         )
 
+
         return cursor.use {
             if (!it.moveToFirst()) {
                 null
@@ -124,6 +125,14 @@ override fun onUpgrade(
                 )
             }
         }
+    }
+    // True when the username and password are right but the admin disabled the account.
+    fun isDisabled(username: String, password: String): Boolean {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT 1 FROM users WHERE username = ? AND password = ? AND status = 'disabled'",
+            arrayOf(username, password)
+        )
+        return cursor.use { it.moveToFirst() }
     }
 
     fun getAllUsers(): List<User> {
