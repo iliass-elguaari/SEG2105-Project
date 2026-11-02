@@ -32,6 +32,11 @@ class WelcomeActivity: ComponentActivity() {
                 WelcomeScreen(
                     firstName= user.firstName,
                     role= SessionManager.roleLabel(user.role),
+
+                    // Only the admin can open Category Management.
+                    onViewCategories = if (user.role == "admin") {
+                        { startActivity(Intent(this, CategoryActivity::class.java)) }
+                    } else null,
                     // Only the admin gets the "View All Users" button.
                     onViewUsers= if (user.role== "admin") {
                         { startActivity(Intent(this, UserListActivity::class.java)) }
@@ -58,6 +63,7 @@ fun WelcomeScreen(
     firstName: String,
     role: String,
     onSignOut: () -> Unit,
+    onViewCategories: (() -> Unit)? = null,
     onViewUsers: (() -> Unit)?= null
 ) {
     Column(
@@ -73,16 +79,24 @@ fun WelcomeScreen(
 
         Spacer(Modifier.height(24.dp))
 
+        if (onViewCategories != null) {
+            Button(onClick = onViewCategories) {
+                Text("Categories")
+            }
+
+            Spacer(Modifier.height(12.dp))
+        }
+
         if (onViewUsers!= null) {
             Button(onClick= onViewUsers) {
-                Text("View All Users")
+                Text("Users")
             }
 
             Spacer(Modifier.height(12.dp))
         }
 
         Button(onClick= onSignOut) {
-            Text("Sign Out")
+            Text("Logout")
         }
     }
 }
