@@ -1,10 +1,10 @@
 @startuml UML_Class_Diagram
-' StudyHub (SEG2105 Fall 2026, Group 40) - Deliverable 1 class diagram.
-' Generated from the classes in app/src/main/java. Regenerate the PDF with:
+' StudyHub (SEG2105 Fall 2026, Group 40) - Deliverable 2 class diagram.
+' Maintained manually based on the classes in app/src/main/java.
+' Regenerate the PDF with:
 '   plantuml -tpdf docs/UML_Class_Diagram.puml
-' Kotlin properties declared with "val" are shown as public read-only attributes.
 
-title StudyHub - Class Diagram (Deliverable 1, Group 40)
+title StudyHub - Class Diagram (Deliverable 2, Group 40)
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 skinparam shadowing false
@@ -33,11 +33,23 @@ package "com.group40.studyhub_project (activities)" {
   class UserListActivity {
     # onCreate(savedInstanceState: Bundle?): void
   }
+  class CategoryActivity {
+    # onCreate(savedInstanceState: Bundle?): void
+    - toast(message: String): void
+  }
+  enum UserAction {
+    DISABLE
+    ENABLE
+    DELETE
+  }
   class "<<Composable functions>>" as Screens <<file-level>> {
     + LoginScreen(onLogin: (String, String) -> String?, onRegister: () -> Unit): void
-    + WelcomeScreen(firstName: String, role: String, onSignOut: () -> Unit, onViewUsers: (() -> Unit)?): void
-    + UserListScreen(users: List<User>, onBack: () -> Unit): void
-    + UserRow(user: User): void
+    + WelcomeScreen(firstName: String, role: String, onSignOut: () -> Unit, onViewUsers: (() -> Unit)?, onViewCategories: (() -> Unit)?): void
+    + UserListScreen(db: UserDatabase, onBack: () -> Unit): void
+    + UserRow(user: User, onAction: (UserAction) -> Unit): void
+    + CategoryScreen(categories: List<Category>, nameExists: (String, Int) -> Boolean, onSave: (Category) -> Unit, onDelete: (Category) -> Unit, onBack: () -> Unit): void
+    + CategoryRow(category: Category, onEdit: () -> Unit, onDelete: () -> Unit): void
+    + CategoryDialog(category: Category, nameExists: (String, Int) -> Boolean, onSave: (Category) -> Unit, onDismiss: () -> Unit): void
   }
 }
 
@@ -47,6 +59,7 @@ package "com.group40.studyhub_project.auth" {
     + AuthManager(context: Context)
     + register(user: User): Boolean
     + login(username: String, password: String): User?
+    + isDisabled(username: String, password: String): Boolean
     + usernameExists(username: String): Boolean
   }
   class SessionManager {
@@ -60,20 +73,42 @@ package "com.group40.studyhub_project.auth" {
 }
 
 package "com.group40.studyhub_project.data" {
-  class UserDatabase {
+    class UserDatabase {
     + UserDatabase(context: Context)
     + onCreate(db: SQLiteDatabase): void
     + onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int): void
+
+    - createCategoriesTable(db: SQLiteDatabase): void
+    - seedAdmin(db: SQLiteDatabase): void
+
     + addUser(user: User): Boolean
     + usernameExists(username: String): Boolean
     + getUser(username: String, password: String): User?
+    + isDisabled(username: String, password: String): Boolean
     + getAllUsers(): List<User>
+
+    + disableUser(username: String): Boolean
+    + enableUser(username: String): Boolean
+    + deleteUser(username: String): Boolean
+
+    + addCategory(category: Category): Boolean
+    + getAllCategories(): List<Category>
+    + updateCategory(category: Category): Boolean
+    + deleteCategory(categoryId: Int): Boolean
   }
   note bottom of UserDatabase
-    SQLite file "StudyHub.db", table "users"
-    (username PK, password, firstName,
-    lastName, email, role).
-    onCreate() seeds the admin account.
+    SQLite database file "StudyHub.db".
+
+    Table "users":
+    username (PK), password, firstName,
+    lastName, email, role, status.
+
+    Table "categories":
+    id (PK), name (UNIQUE), description.
+
+    Default admin account is seeded
+    during database creation.
+    User status defaults to "active".
   end note
 }
 
@@ -85,7 +120,14 @@ package "com.group40.studyhub_project.model" {
     + lastName: String {readOnly}
     + email: String {readOnly}
     + role: String {readOnly}
-    + User(username: String, password: String, firstName: String, lastName: String, email: String, role: String)
+    + status: String = "active" {readOnly}
+    + User(username: String, password: String, firstName: String, lastName: String, email: String, role: String, status: String = "active")
+  }
+  class Category {
+    + id: Int = 0 {readOnly}
+    + name: String {readOnly}
+    + description: String {readOnly}
+    + Category(id: Int = 0, name: String, description: String)
   }
   class Admin {
     + Admin(username: String, password: String, firstName: String, lastName: String, email: String)
@@ -113,9 +155,12 @@ package "com.group40.studyhub_project.util" {
     + {static} validateUsernameAvailability(username: String, usernameExists: Boolean): String?
     + {static} validatePassword(password: String): String?
     + {static} validateRole(role: String): String?
+    + {static} validateCategoryName(name: String): String?
+    + {static} validateCategoryNameAvailability(nameExists: Boolean): String?
+    + {static} validateCategoryDescription(description: String): String?
   }
   class "ValidatedTextField.kt" as VTF <<file-level>> {
-    + ValidatedTextField(value: String, onValueChange: (String) -> Unit, label: String, error: String?, ...): void
+    + ValidatedTextField(value: String, onValueChange: (String) -> Unit, label: String, error: String?, modifier: Modifier = Modifier, keyboardOptions: KeyboardOptions = KeyboardOptions.Default, visualTransformation: VisualTransformation = VisualTransformation.None, singleLine: Boolean = true): void
   }
 }
 
@@ -124,6 +169,7 @@ ComponentActivity <|-- LoginActivity
 ComponentActivity <|-- SignUpActivity
 ComponentActivity <|-- WelcomeActivity
 ComponentActivity <|-- UserListActivity
+ComponentActivity <|-- CategoryActivity
 SQLiteOpenHelper <|-- UserDatabase
 
 ' Role subclasses fix the role passed to User
@@ -134,9 +180,11 @@ User <|-- StudentGroupLeader
 ' Ownership / associations
 AuthManager "1" *-- "1" UserDatabase : database
 UserDatabase "1" o-- "0..*" User : stores >
+UserDatabase "1" o-- "0..*" Category : stores >
 SessionManager ..> User : saves / restores
 AuthManager ..> Validator : checks fields
 AuthManager ..> User : creates / returns
+AuthManager ..> UserDatabase : authentication operations
 
 LoginActivity ..> AuthManager : login()
 LoginActivity ..> SessionManager : startSession()
@@ -148,9 +196,20 @@ SignUpActivity ..> User : builds
 WelcomeActivity ..> SessionManager : currentUser() / endSession()
 WelcomeActivity ..> Screens : WelcomeScreen
 WelcomeActivity ..> UserListActivity : opens (admin only)
+WelcomeActivity ..> CategoryActivity : opens (admin only)
 UserListActivity ..> SessionManager : admin check
 UserListActivity ..> UserDatabase : getAllUsers()
 UserListActivity ..> Screens : UserListScreen
+UserListActivity ..> UserAction : handles actions
 
 LoginActivity ..> SignUpActivity : opens
+
+Screens ..> Category : displays / edits
+Screens ..> User : displays
+Screens ..> Validator : validates input
+Screens ..> VTF : uses validated fields
+
+CategoryActivity ..> SessionManager : admin check
+CategoryActivity ..> UserDatabase : Category CRUD
+CategoryActivity ..> Screens : CategoryScreen
 @enduml

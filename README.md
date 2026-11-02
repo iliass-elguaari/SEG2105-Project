@@ -1,7 +1,9 @@
 # StudyHub – SEG2105 Fall 2026, Group 40
 
 Android app (Kotlin + Jetpack Compose) for organising university study groups.
-Deliverable 1 covers accounts: sign-up, login, a role-based welcome screen and sign-out.
+
+Deliverable 1 covers account registration, login, session management and role-based access.
+Deliverable 2 adds administrator functionality, including user management and course category management.
 
 Repository: https://github.com/SEG2105-Garzon-uOttawa/seg2105f26-group_40_project
 
@@ -14,17 +16,19 @@ Repository: https://github.com/SEG2105-Garzon-uOttawa/seg2105f26-group_40_projec
 | Wang Dai | [wang-kg](https://github.com/wang-kg) |
 | Iliass El Guaari | [iliass-elguaari](https://github.com/iliass-elguaari) |
 
-## Features (Deliverable 1)
+## Features
 
 - **Sign up** as a Student or a Group Leader, with each field checked separately (rules below).
 - **Log in** with a username and password. Accounts are stored in a local SQLite database (`StudyHub.db`).
 - **Welcome screen** that shows the user's first name and role ("admin", "student" or "study group leader").
 - **Session**: the app remembers who is logged in and opens on the welcome screen. **Sign Out** clears the session.
-- **Admin user list**: when logged in as admin, a **View All Users** button opens a list of every account (name, username, email, role). Passwords are never shown. Other roles do not see the button, and the screen closes itself if a non-admin reaches it.
+- **Admin user management**: administrators can view all registered users and disable, enable or delete user accounts. Administrators cannot disable, enable or delete the admin account. Passwords are never displayed.
+- **Category management**: administrators can create, view, edit and delete course categories. Category names must be unique, and category names and descriptions are validated.
+- **Role-based access control**: user management and category management are restricted to administrators. Non-admin users cannot access these screens.
 
 ## Admin account
 
-The admin is created in code when the database is first made (`UserDatabase.onCreate`). Nobody can sign up as admin.
+The admin account is seeded by `UserDatabase` during database creation or upgrade. Nobody can sign up as admin. The admin account cannot be disabled, enabled or deleted through user management.
 
 | Username | Password |
 | --- | --- |
@@ -58,16 +62,17 @@ app/src/main/java/
 ├── com/group40/studyhub_project/
 │   ├── LoginActivity.kt        # launcher, LoginScreen
 │   ├── SignUpActivity.kt       # registration form
-│   ├── WelcomeActivity.kt      # WelcomeScreen, sign out, admin "View All Users"
-│   ├── UserListActivity.kt     # admin-only user list (LazyColumn)
+│   ├── WelcomeActivity.kt      # WelcomeScreen, sign out, admin entry points
+│   ├── UserListActivity.kt     # admin-only user management (LazyColumn)
+│   ├── CategoryActivity.kt     # admin-only category management (CRUD)
 │   ├── auth/AuthManager.kt     # register / login, wraps UserDatabase
 │   ├── auth/SessionManager.kt  # logged-in user in SharedPreferences
-│   ├── data/UserDatabase.kt    # SQLiteOpenHelper, users table, admin seed
-│   └── model/                  # User (open) + Admin, Student, StudentGroupLeader subclasses
-└── util/                       # Validator, ValidatedTextField
+│   ├── data/UserDatabase.kt    # SQLiteOpenHelper, users and categories tables, admin seed
+│   ├── model/                  # User (open) + Admin, Student, StudentGroupLeader, Category
+│   └── util/                   # Validator, ValidatedTextField
 docs/
 ├── UML_Class_Diagram.puml      # PlantUML source
-└── UML_Class_Diagram.pdf       # class diagram (Deliverable 1)
+└── UML_Class_Diagram.pdf       # class diagram (Deliverable 2)
 ```
 
 ## Build and run
