@@ -6,9 +6,15 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.group40.studyhub_project.model.User
 import com.group40.studyhub_project.model.Category
+import com.group40.studyhub_project.model.Course
+import com.group40.studyhub_project.model.Task
 
 class UserDatabase(context: Context) :
-    SQLiteOpenHelper(context, "StudyHub.db", null, 2) {
+    SQLiteOpenHelper(context, "StudyHub.db", null, 3) {
+
+    override fun onConfigure(db: SQLiteDatabase) {
+        db.setForeignKeyConstraintsEnabled(true)
+    }
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -25,6 +31,7 @@ class UserDatabase(context: Context) :
         )
 
         createCategoriesTable(db)
+        createStudyTables(db)
         seedAdmin(db)
     }
     private fun createCategoriesTable(db:SQLiteDatabase) {
@@ -34,6 +41,36 @@ class UserDatabase(context: Context) :
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
                 description TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+
+    private fun createStudyTables(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS courses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL,
+                term TEXT NOT NULL,
+                location TEXT,
+                ownerUsername TEXT NOT NULL,
+                UNIQUE(ownerUsername, code)
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                courseId INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                dueDate INTEGER NOT NULL,
+                isCompleted INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY(courseId) REFERENCES courses(id) ON DELETE CASCADE
             )
             """.trimIndent()
         )
@@ -70,6 +107,9 @@ override fun onUpgrade(
         createCategoriesTable(db)
     }
 
+    if (oldVersion < 3) {
+        createStudyTables(db)
+    }
     seedAdmin(db)
 }
 
@@ -251,6 +291,144 @@ override fun onUpgrade(
             "categories",
             "id = ?",
             arrayOf(categoryId.toString())
+        ) > 0
+    }
+
+    fun addCourse(course: Course): Boolean {
+        val values = ContentValues().apply {
+            put("code", course.code)
+            put("title", course.title)
+            put("category", course.category)
+            put("term", course.term)
+            put("location", course.location)
+            put("ownerUsername", course.ownerUsername)
+        }
+        return writableDatabase.insert("courses", null, values) != -1L
+    }
+
+    fun getCourses(ownerUsername: String): List<Course> {
+        val courses = mutableListOf<Course>()
+        val cursor = readableDatabase.rawQuery(
+            "SELECT id, code, title, category, term, location, ownerUsername FROM courses WHERE ownerUsername = ? ORDER BY code",
+            arrayOf(ownerUsername)
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                courses.add(
+                    Course(
+                        id = it.getLong(0),
+                        code = it.getString(1),
+                        title = it.getString(2),
+                        category = it.getString(3),
+                        term = it.getString(4),
+                        location = it.getString(5),
+                        ownerUsername = it.getString(6)
+                    )
+                )
+            }
+        }
+        return courses
+    }
+
+    fun getCourse(courseId: Long, ownerUsername: String): Course? {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT id, code, title, category, term, location, ownerUsername FROM courses WHERE id = ? AND ownerUsername = ?",
+            arrayOf(courseId.toString(), ownerUsername)
+        )
+        return cursor.use {
+            if (!it.moveToFirst()) null else Course(
+                id = it.getLong(0),
+                code = it.getString(1),
+                title = it.getString(2),
+                category = it.getString(3),
+                term = it.getString(4),
+                location = it.getString(5),
+                ownerUsername = it.getString(6)
+            )
+        }
+    }
+
+    fun updateCourse(course: Course): Boolean {
+        val values = ContentValues().apply {
+            put("code", course.code)
+            put("title", course.title)
+            put("category", course.category)
+            put("term", course.term)
+            put("location", course.location)
+        }
+        return writableDatabase.update(
+            "courses", values, "id = ? AND ownerUsername = ?",
+            arrayOf(course.id.toString(), course.ownerUsername)
+        ) > 0
+    }
+
+    fun deleteCourse(courseId: Long, ownerUsername: String): Boolean {
+        return writableDatabase.delete(
+            "courses", "id = ? AND ownerUsername = ?",
+            arrayOf(courseId.toString(), ownerUsername)
+        ) > 0
+    }
+
+    fun addTask(task: Task, ownerUsername: String): Boolean {
+        if (getCourse(task.courseId, ownerUsername) == null) return false
+        val values = ContentValues().apply {
+            put("courseId", task.courseId)
+            put("title", task.title)
+            put("description", task.description)
+            put("dueDate", task.dueDate)
+            put("isCompleted", if (task.isCompleted) 1 else 0)
+        }
+        return writableDatabase.insert("tasks", null, values) != -1L
+    }
+
+    fun getTasks(courseId: Long, ownerUsername: String): List<Task> {
+        val tasks = mutableListOf<Task>()
+        val cursor = readableDatabase.rawQuery(
+            """
+            SELECT t.id, t.courseId, t.title, t.description, t.dueDate, t.isCompleted
+            FROM tasks t INNER JOIN courses c ON c.id = t.courseId
+            WHERE t.courseId = ? AND c.ownerUsername = ? ORDER BY t.dueDate
+            """.trimIndent(),
+            arrayOf(courseId.toString(), ownerUsername)
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                tasks.add(
+                    Task(
+                        id = it.getLong(0),
+                        courseId = it.getLong(1),
+                        title = it.getString(2),
+                        description = it.getString(3),
+                        dueDate = it.getLong(4),
+                        isCompleted = it.getInt(5) != 0
+                    )
+                )
+            }
+        }
+        return tasks
+    }
+
+    fun updateTask(task: Task, ownerUsername: String): Boolean {
+        if (getCourse(task.courseId, ownerUsername) == null) return false
+        val values = ContentValues().apply {
+            put("courseId", task.courseId)
+            put("title", task.title)
+            put("description", task.description)
+            put("dueDate", task.dueDate)
+            put("isCompleted", if (task.isCompleted) 1 else 0)
+        }
+        return writableDatabase.update(
+            "tasks", values,
+            "id = ? AND courseId IN (SELECT id FROM courses WHERE ownerUsername = ?)",
+            arrayOf(task.id.toString(), ownerUsername)
+        ) > 0
+    }
+
+    fun deleteTask(taskId: Long, ownerUsername: String): Boolean {
+        return writableDatabase.delete(
+            "tasks",
+            "id = ? AND courseId IN (SELECT id FROM courses WHERE ownerUsername = ?)",
+            arrayOf(taskId.toString(), ownerUsername)
         ) > 0
     }
 }

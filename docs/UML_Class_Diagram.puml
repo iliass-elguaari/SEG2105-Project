@@ -1,10 +1,10 @@
 @startuml UML_Class_Diagram
-' StudyHub (SEG2105 Fall 2026, Group 40) - Deliverable 2 class diagram.
+' StudyHub (SEG2105 Fall 2026, Group 40) - Deliverable 3 class diagram.
 ' Maintained manually based on the classes in app/src/main/java.
 ' Regenerate the PDF with:
 '   plantuml -tpdf docs/UML_Class_Diagram.puml
 
-title StudyHub - Class Diagram (Deliverable 2, Group 40)
+title StudyHub - Class Diagram (Deliverable 3, Group 40)
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 skinparam shadowing false
@@ -79,6 +79,7 @@ package "com.group40.studyhub_project.data" {
     + onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int): void
 
     - createCategoriesTable(db: SQLiteDatabase): void
+    - createStudyTables(db: SQLiteDatabase): void
     - seedAdmin(db: SQLiteDatabase): void
 
     + addUser(user: User): Boolean
@@ -95,6 +96,16 @@ package "com.group40.studyhub_project.data" {
     + getAllCategories(): List<Category>
     + updateCategory(category: Category): Boolean
     + deleteCategory(categoryId: Int): Boolean
+
+    + addCourse(course: Course): Boolean
+    + getCourses(ownerUsername: String): List<Course>
+    + getCourse(courseId: Long, ownerUsername: String): Course?
+    + updateCourse(course: Course): Boolean
+    + deleteCourse(courseId: Long, ownerUsername: String): Boolean
+    + addTask(task: Task, ownerUsername: String): Boolean
+    + getTasks(courseId: Long, ownerUsername: String): List<Task>
+    + updateTask(task: Task, ownerUsername: String): Boolean
+    + deleteTask(taskId: Long, ownerUsername: String): Boolean
   }
   note bottom of UserDatabase
     SQLite database file "StudyHub.db".
@@ -105,6 +116,15 @@ package "com.group40.studyhub_project.data" {
 
     Table "categories":
     id (PK), name (UNIQUE), description.
+
+    Table "courses":
+    id (PK), code, title, category, term,
+    location, ownerUsername; code is unique per owner.
+
+    Table "tasks":
+    id (PK), courseId (FK), title, description,
+    dueDate (epoch milliseconds), isCompleted.
+    Deleting a course cascades to its tasks.
 
     Default admin account is seeded
     during database creation.
@@ -128,6 +148,25 @@ package "com.group40.studyhub_project.model" {
     + name: String {readOnly}
     + description: String {readOnly}
     + Category(id: Int = 0, name: String, description: String)
+  }
+  class Course {
+    + id: Long = 0 {readOnly}
+    + code: String {readOnly}
+    + title: String {readOnly}
+    + category: String {readOnly}
+    + term: String {readOnly}
+    + location: String? = null {readOnly}
+    + ownerUsername: String {readOnly}
+    + Course(id: Long = 0, code: String, title: String, category: String, term: String, location: String? = null, ownerUsername: String)
+  }
+  class Task {
+    + id: Long = 0 {readOnly}
+    + courseId: Long {readOnly}
+    + title: String {readOnly}
+    + description: String {readOnly}
+    + dueDate: Long {readOnly}
+    + isCompleted: Boolean = false {readOnly}
+    + Task(id: Long = 0, courseId: Long, title: String, description: String, dueDate: Long, isCompleted: Boolean = false)
   }
   class Admin {
     + Admin(username: String, password: String, firstName: String, lastName: String, email: String)
@@ -181,6 +220,9 @@ User <|-- StudentGroupLeader
 AuthManager "1" *-- "1" UserDatabase : database
 UserDatabase "1" o-- "0..*" User : stores >
 UserDatabase "1" o-- "0..*" Category : stores >
+UserDatabase "1" o-- "0..*" Course : stores >
+Course "1" *-- "0..*" Task : tasks (cascade delete)
+Course "0..*" --> "1" User : ownerUsername
 SessionManager ..> User : saves / restores
 AuthManager ..> Validator : checks fields
 AuthManager ..> User : creates / returns

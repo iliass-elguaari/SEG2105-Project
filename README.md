@@ -4,6 +4,7 @@ Android app (Kotlin + Jetpack Compose) for organising university study groups.
 
 Deliverable 1 covers account registration, login, session management and role-based access.
 Deliverable 2 adds administrator functionality, including user management and course category management.
+Deliverable 3 adds courses and tasks, with courses and their tasks scoped to the owning student.
 
 Repository: https://github.com/SEG2105-Garzon-uOttawa/seg2105f26-group_40_project
 
@@ -24,6 +25,7 @@ Repository: https://github.com/SEG2105-Garzon-uOttawa/seg2105f26-group_40_projec
 - **Session**: the app remembers who is logged in and opens on the welcome screen. **Sign Out** clears the session.
 - **Admin user management**: administrators can view all registered users and disable, enable or delete user accounts. Administrators cannot disable, enable or delete the admin account. Passwords are never displayed.
 - **Category management**: administrators can create, view, edit and delete course categories. Category names must be unique, and category names and descriptions are validated.
+- **Courses and tasks**: courses are stored per student; each course has its own tasks, which are removed when the course is deleted.
 - **Role-based access control**: user management and category management are restricted to administrators. Non-admin users cannot access these screens.
 
 ## Admin account
@@ -67,12 +69,12 @@ app/src/main/java/
 │   ├── CategoryActivity.kt     # admin-only category management (CRUD)
 │   ├── auth/AuthManager.kt     # register / login, wraps UserDatabase
 │   ├── auth/SessionManager.kt  # logged-in user in SharedPreferences
-│   ├── data/UserDatabase.kt    # SQLiteOpenHelper, users and categories tables, admin seed
-│   ├── model/                  # User (open) + Admin, Student, StudentGroupLeader, Category
+│   ├── data/UserDatabase.kt    # SQLiteOpenHelper, users, categories, courses and tasks
+│   ├── model/                  # User roles, Category, Course and Task
 │   └── util/                   # Validator, ValidatedTextField
 docs/
 ├── UML_Class_Diagram.puml      # PlantUML source
-└── UML_Class_Diagram.pdf       # class diagram (Deliverable 2)
+└── UML_Class_Diagram.pdf       # class diagram (Deliverable 3)
 ```
 
 ## Build and run
