@@ -152,4 +152,116 @@ object Validator {
 
         return null
     }
+
+    // ---- Courses (Deliverable 3) ----
+
+    val COURSE_TERM_SEASONS = listOf("Fall", "Winter", "Summer")
+
+    // "seg 2105" -> "SEG2105". Use this before validating, checking duplicates and saving.
+    fun normalizeCourseCode(code: String): String =
+        code.trim().replace(Regex("\\s+"), "").uppercase()
+
+    fun validateCourseCode(code: String): String? {
+        val value = normalizeCourseCode(code)
+
+        if (value.isEmpty()) {
+            return "Course code is required."
+        }
+
+        if (!value.matches(Regex("[A-Z]{3,4}[0-9]{4}[A-Z]?"))) {
+            return "Use 3-4 letters then 4 digits (e.g. SEG2105)."
+        }
+
+        return null
+    }
+
+    fun validateCourseCodeAvailability(codeExists: Boolean): String? {
+        if (codeExists) {
+            return "You already have a course with this code."
+        }
+
+        return null
+    }
+
+    fun validateCourseTitle(title: String): String? {
+        val value = title.trim()
+
+        if (value.isEmpty()) {
+            return "Course title is required."
+        }
+
+        if (value.length !in 3..100) {
+            return "Course title must be between 3 and 100 characters."
+        }
+
+        if (!value.any { it.isLetter() }) {
+            return "Course title must contain letters."
+        }
+
+        if (!value.matches(Regex("[\\p{L}\\p{N} &'.,:()+#/-]+"))) {
+            return "Use letters, numbers, spaces and & ' . , : ( ) + # / - only."
+        }
+
+        return null
+    }
+
+    // The category must be one the administrator defined.
+    fun validateCourseCategory(category: String, adminCategories: List<String>): String? {
+        val value = category.trim()
+
+        if (value.isEmpty()) {
+            return "Please select a category."
+        }
+
+        if (adminCategories.none { it == value }) {
+            return "Please select a category from the list."
+        }
+
+        return null
+    }
+
+    fun validateTermSeason(season: String): String? {
+        if (season !in COURSE_TERM_SEASONS) {
+            return "Please select Fall, Winter or Summer."
+        }
+
+        return null
+    }
+
+    fun validateTermYear(year: String): String? {
+        val value = year.trim()
+
+        if (value.isEmpty()) {
+            return "Year is required."
+        }
+
+        if (!value.matches(Regex("[0-9]{4}"))) {
+            return "Enter a 4-digit year."
+        }
+
+        if (value.toInt() !in 2000..2100) {
+            return "Year must be between 2000 and 2100."
+        }
+
+        return null
+    }
+
+    // Location is optional, but checked when it is filled in.
+    fun validateCourseLocation(location: String): String? {
+        val value = location.trim()
+
+        if (value.isEmpty()) {
+            return null
+        }
+
+        if (value.length !in 2..100) {
+            return "Location must be between 2 and 100 characters."
+        }
+
+        if (!value.matches(Regex("[\\p{L}\\p{N} &'.,:()#/-]+"))) {
+            return "Use letters, numbers, spaces and & ' . , : ( ) # / - only."
+        }
+
+        return null
+    }
 }

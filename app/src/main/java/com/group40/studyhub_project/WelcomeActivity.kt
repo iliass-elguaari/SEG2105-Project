@@ -33,6 +33,10 @@ class WelcomeActivity: ComponentActivity() {
                     firstName= user.firstName,
                     role= SessionManager.roleLabel(user.role),
 
+                    // Students (and group leaders) manage their own courses.
+                    onViewCourses= if (user.role!= "admin") {
+                        { startActivity(Intent(this, CourseListActivity::class.java)) }
+                    } else null,
                     // Only the admin can open Category Management.
                     onViewCategories = if (user.role == "admin") {
                         { startActivity(Intent(this, CategoryActivity::class.java)) }
@@ -63,6 +67,7 @@ fun WelcomeScreen(
     firstName: String,
     role: String,
     onSignOut: () -> Unit,
+    onViewCourses: (() -> Unit)? = null,
     onViewCategories: (() -> Unit)? = null,
     onViewUsers: (() -> Unit)?= null
 ) {
@@ -78,6 +83,14 @@ fun WelcomeScreen(
         )
 
         Spacer(Modifier.height(24.dp))
+
+        if (onViewCourses != null) {
+            Button(onClick = onViewCourses) {
+                Text("My Courses")
+            }
+
+            Spacer(Modifier.height(12.dp))
+        }
 
         if (onViewCategories != null) {
             Button(onClick = onViewCategories) {
