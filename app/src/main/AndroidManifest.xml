@@ -47,6 +47,8 @@
             android:name=".AddCourseActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".EditCourseActivity" android:exported="false" />
+        <activity android:name=".TaskListActivity" android:exported="false" />
     </application>
 
 </manifest>

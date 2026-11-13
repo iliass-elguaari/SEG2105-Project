@@ -1,6 +1,8 @@
 package com.group40.studyhub_project
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -38,11 +40,68 @@ class CourseDetailActivity: ComponentActivity() {
 
         setContent {
             StudyHubProjectTheme {
+                // true while the "Are you sure?" box is open
+                var confirmDelete by remember { mutableStateOf(false) }
+
                 course?.let { current ->
                     CourseDetailScreen(
                         course= current,
-                        onBack= { finish() }
+                        onBack= { finish() },
+                        actions= {
+                            Button(
+                                onClick= { openScreen(EditCourseActivity::class.java) },
+                                modifier= Modifier.fillMaxWidth()
+                            ) {
+                                Text("Edit Course")
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Button(
+                                onClick= { openScreen(TaskListActivity::class.java) },
+                                modifier= Modifier.fillMaxWidth()
+                            ) {
+                                Text("View Tasks")
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Button(
+                                onClick= { confirmDelete= true },
+                                colors= ButtonDefaults.buttonColors(
+                                    containerColor= MaterialTheme.colorScheme.error
+                                ),
+                                modifier= Modifier.fillMaxWidth()
+                            ) {
+                                Text("Delete Course")
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+                        }
                     )
+
+                    if (confirmDelete) {
+                        AlertDialog(
+                            onDismissRequest= { confirmDelete= false },
+                            title= { Text("Delete course?") },
+                            text= {
+                                Text("Are you sure you want to delete ${current.code}? All of its tasks will be deleted too.")
+                            },
+                            confirmButton= {
+                                TextButton(onClick= {
+                                    confirmDelete= false
+                                    deleteCourse()
+                                }) {
+                                    Text("Yes")
+                                }
+                            },
+                            dismissButton= {
+                                TextButton(onClick= { confirmDelete= false }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -55,6 +114,22 @@ class CourseDetailActivity: ComponentActivity() {
 
         course= database.getCourse(courseId, username)
         if (course== null) finish()
+    }
+
+    // Opens the edit or task screen for this course.
+    private fun openScreen(screen: Class<*>) {
+        startActivity(Intent(this, screen).putExtra(EXTRA_COURSE_ID, courseId))
+    }
+
+    // Deletes the course. Its tasks are removed too, because the tasks table
+    // uses ON DELETE CASCADE (the delete rule).
+    private fun deleteCourse() {
+        if (database.deleteCourse(courseId, username)) {
+            Toast.makeText(this, "Course and its tasks deleted.", Toast.LENGTH_SHORT).show()
+            finish()
+        } else {
+            Toast.makeText(this, "Could not delete the course.", Toast.LENGTH_SHORT).show()
+        }
     }
 
     companion object {
